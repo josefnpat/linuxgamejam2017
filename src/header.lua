@@ -1,7 +1,7 @@
 pico-8 cartridge // http://www.pico-8.com
 version 8
 __lua__
---v%%git_count%%
+--stealth elf v%%git_count%%
 --a game by @josefnpat and @therickywill
 
 states = {}

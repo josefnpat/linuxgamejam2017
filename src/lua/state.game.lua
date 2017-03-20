@@ -27,9 +27,9 @@ function states.game:init()
   add(self.ground,{y=16}) cx+=8
   add(self.ground,{y=16}) cx+=8
 
-  for level = 1,1 do
+  for level = 1,10 do
 
-    for i = 1,1 do -- platforms in each level
+    for i = 1,10 do -- platforms in each level
       local plat_size = flr(rnd()*8)+12
       local plat_height = flr(rnd()*8)*8+8
 
