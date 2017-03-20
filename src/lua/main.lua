@@ -1,5 +1,5 @@
 function _init()
-  switch_state("game")
+  switch_state("start")
 end
 
 function _draw()

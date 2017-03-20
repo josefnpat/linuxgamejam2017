@@ -2,25 +2,36 @@ states.game = {}
 
 function states.game:init()
 
+  self.dt = 0
+
   self.ground = {}
 
-  add(self.ground,{y=120})
-  add(self.ground,{y=120})
+  local cx = 0
+  add(self.ground,{y=120}) cx+=8
+  add(self.ground,{y=120}) cx+=8
 
   self.grapples = {}
+  self.bookshelves = {}
   self.enemies = {}
   self.shops = {}
-  local cx = 0
-  for i = 1,16 do
-    add(self.ground,{y=8})
-    cx += 8
+  self.coins = {}
+  for i = 1,12 do
+    add(self.ground,{y=8}) cx += 8
   end
-  add(self.ground,{y=16})
-  add(self.ground,{y=16})
+  add(self.ground,{y=16}) cx+=8
+  add(self.ground,{y=16}) cx+=8
 
-  for i = 1,10 do
-    local plat_size = flr(rnd()*3)+8
+  for i = 1,1 do
+    local plat_size = flr(rnd()*8)+12
     local plat_height = flr(rnd()*8)*8+8
+
+    add(self.bookshelves,{
+      x = cx+2*8,
+      y = plat_height,
+      w = max(3,flr(plat_size*rnd())-2),
+      h = flr(rnd()*4)+3,
+    })
+
     for j = 1,plat_size do
       cx += 8
       add(self.ground,{y=plat_height})
@@ -36,14 +47,19 @@ function states.game:init()
     })
 
     add(self.grapples,{
-      x = cx + plat_size/2*8,
+      x = cx - plat_size/2*8,
       y = plat_height+32,
+    })
+
+    add(self.coins,{
+      x = cx - rnd()*plat_size*8/2,
+      y = plat_height,
     })
 
   end
 
-  add(self.ground,{y=16})
-  add(self.ground,{y=16})
+  add(self.ground,{y=16}) cx+=8
+  add(self.ground,{y=16}) cx+=8
 
   for i = 1,10 do
     add(self.ground,{y=8})
@@ -51,12 +67,12 @@ function states.game:init()
   end
 
   add(self.shops,{
-    x=cx,
+    x=cx-16,
     y=8,
   })
 
-  add(self.ground,{y=128})
-  add(self.ground,{y=128})
+  add(self.ground,{y=128}) cx+=8
+  add(self.ground,{y=128}) cx+=8
 
   self.offset = 0
 
@@ -78,7 +94,60 @@ function states.game:init()
       speed = 32,
       jumpv = 0,
       dt = 0,
+      money = 11,
+      potion = 0,
     })
+  end
+
+  self.bs = {
+    top = 49,
+    top_left = 48,
+    top_right = 50,
+    left = 64,
+    center = 65,
+    right = 66,
+    bot_left = 80,
+    bot = 81,
+    bot_right = 82,
+  }
+
+end
+
+function states.game:drawBookshelf(bookshelf)
+  for x = 1,bookshelf.w do
+    for y = 1,bookshelf.h do
+      local rx = bookshelf.x-offset+(x-1)*8
+      local ry = 128-bookshelf.y-(y)*8
+      local sprite = 65
+      if y == 1 then
+        sprite = self.bs.bot
+      end
+      if y == bookshelf.h then
+        sprite = self.bs.top
+      end
+      if x == 1 then
+        sprite = self.bs.left
+      end
+      if x == bookshelf.w then
+        sprite = self.bs.right
+      end
+
+      if x == 1 and y == 1 then
+        sprite = self.bs.bot_left
+      end
+      if x == 1 and y == bookshelf.h then
+        sprite = self.bs.top_left
+      end
+
+      if x == bookshelf.w and y == 1 then
+        sprite = self.bs.bot_right
+      end
+      if x == bookshelf.w and y == bookshelf.h then
+        sprite = self.bs.top_right
+      end
+
+      spr(sprite,rx,ry,1,1)
+    end
   end
 
 end
@@ -144,6 +213,10 @@ function states.game:draw()
     end
   end
 
+  for _,bookshelf in pairs(self.bookshelves) do
+    self:drawBookshelf(bookshelf)
+  end
+
   for _,enemy in pairs(self.enemies) do
     local x,y = enemy.x-8-offset,128-enemy.y-24
     if enemy.dt%0.25 > 0.125 then
@@ -160,10 +233,30 @@ function states.game:draw()
 
   for _,s in pairs(self.shops) do
     local x,y = s.x-8-offset,128-s.y-32
-    spr(196,x,y,3,4)
+    local player = self.players[1]
+    if player.show_shop then
+      if player.shop_attempt ~= nil then
+        if player.shop_attempt == true then
+          spr(202,x,y,3,4)
+        elseif player.shop_attempt == false then
+          spr(205,x,y,3,4)
+        end
+      else
+        spr(199,x,y,3,4)
+      end
+    else
+      spr(196,x,y,3,4)
+    end
+  end
+
+  for _,coin in pairs(self.coins) do
+    local sprite = self.dt*4%1 > 0.5 and 189 or 190
+    local x,y = coin.x-4-offset,128-coin.y-8
+    spr(sprite,x,y,1,1)
   end
 
   for _,player in pairs(self.players) do
+
     local x,y = player.x-8-offset,128-player.y-24
     local sprite = player.dt%0.25 > 0.125 and 14 or 12
     if player.show_item then
@@ -189,9 +282,15 @@ function states.game:draw()
     spr(160,x,y,2,2)
     if grapple.highlight then
       color(8)
-      rect(x-1,y-1,x+17,y+17)
+      rect(x+1,y+1,x+14,y+14)
+      local sprite = self.dt*4%1 > 0.5 and 77 or 78
+      spr(sprite,x+4,y+4,1,1)
+      color(7)
     end
   end
+
+  print("lives: "..states.start.lives..
+    " money:"..self.players[1].money.." potion: "..self.players[1].potion)
 
 end
 
@@ -235,12 +334,24 @@ end
 
 function states.game:update(dt)
 
+  self.dt += dt
+
+  states.start.time += dt
+
   for _,shop in pairs(self.shops) do
     for _,player in pairs(self.players) do
       local distance = self.distance(shop,player) 
       if distance < 8 then
-        print"you win"
-        stop()
+        if btn(5,player_index) and player.shop_attempt_dt == nil then
+          player.shop_attempt_dt = 1
+          if player.money >= 4 then
+            player.shop_attempt = true
+            player.money -= 4
+            player.potion += 1
+          else
+            player.shop_attempt = false
+          end
+        end
       end
     end
   end
@@ -263,11 +374,23 @@ function states.game:update(dt)
 
   for i,player in pairs(self.players) do
 
+    for _,coin in pairs(self.coins) do
+      if self.distance(coin,player) < 4 then
+        del(self.coins,coin)
+        player.money += 1
+      end
+    end
+
     for _,enemy in pairs(self.enemies) do
       local distance = self.distance(enemy,player) 
       if distance < 8 then
-        print"game over"
-        stop()
+        if states.start.lives > 0 then
+          printh"you be hurt bro"
+          states.start.lives -= 1
+          switch_state("game")
+        else
+          switch_state("lose")
+        end
       end
 
       if enemy.y == player.y then
@@ -290,8 +413,23 @@ function states.game:update(dt)
 
     local player_index = i-1
 
+    if player.shop_attempt_dt then
+      player.shop_attempt_dt -= dt
+      if player.shop_attempt_dt <= 0 then
+        player.shop_attempt_dt = nil
+        player.shop_attempt = nil
+      end
+    end
+
     player.show_grapple = btn(2,player_index) and player.jumpv == 0
     player.show_item = btn(3,player_index)
+
+    player.show_shop = false
+    for _,shop in pairs(self.shops) do
+      if self.distance(player,shop) < 8 then
+        player.show_shop = true
+      end
+    end
 
     local tx,ty = player.x,player.y
 
