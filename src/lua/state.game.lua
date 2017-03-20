@@ -1,5 +1,11 @@
 states.game = {}
 
+_sfx = sfx
+sfx = function(id,c)
+  _sfx(id,c)
+  printh('sfx:'..id..":"..c)
+end
+
 function states.game:init()
 
   self.dt = 0
@@ -21,55 +27,73 @@ function states.game:init()
   add(self.ground,{y=16}) cx+=8
   add(self.ground,{y=16}) cx+=8
 
-  for i = 1,1 do
-    local plat_size = flr(rnd()*8)+12
-    local plat_height = flr(rnd()*8)*8+8
+  for level = 1,1 do
 
-    add(self.bookshelves,{
-      x = cx+2*8,
-      y = plat_height,
-      w = max(3,flr(plat_size*rnd())-2),
-      h = flr(rnd()*4)+3,
-    })
+    for i = 1,1 do -- platforms in each level
+      local plat_size = flr(rnd()*8)+12
+      local plat_height = flr(rnd()*8)*8+8
 
-    for j = 1,plat_size do
+      add(self.bookshelves,{
+        x = cx+2*8,
+        y = plat_height,
+        w = max(3,flr(plat_size*rnd())-2),
+        h = flr(rnd()*4)+3,
+      })
+
+      for j = 1,plat_size do
+        cx += 8
+        add(self.ground,{y=plat_height})
+      end
+
+      add(self.enemies,{
+        x = cx-8,
+        y = plat_height,
+        dir = 1,
+        speed = rnd()*15+15,
+        dt = rnd(),
+        fast = 1,
+      })
+
+      add(self.grapples,{
+        x = cx - plat_size/2*8,
+        y = plat_height+32,
+      })
+
+      add(self.coins,{
+        x = cx - rnd()*plat_size*8/2,
+        y = plat_height,
+      })
+    end
+    add(self.ground,{y=16}) cx+=8
+    add(self.ground,{y=16}) cx+=8
+
+    for i = 1,10 do
+      add(self.ground,{y=8})
       cx += 8
-      add(self.ground,{y=plat_height})
     end
 
-    add(self.enemies,{
-      x = cx-8,
-      y = plat_height,
-      dir = 1,
-      speed = rnd()*15+15,
-      dt = rnd(),
-      fast = 1,
+    add(self.shops,{
+      x=cx-32,
+      y=8,
     })
 
-    add(self.grapples,{
-      x = cx - plat_size/2*8,
-      y = plat_height+32,
-    })
-
-    add(self.coins,{
-      x = cx - rnd()*plat_size*8/2,
-      y = plat_height,
-    })
+    add(self.ground,{y=16}) cx+=8
+    add(self.ground,{y=16}) cx+=8
 
   end
 
-  add(self.ground,{y=16}) cx+=8
-  add(self.ground,{y=16}) cx+=8
-
-  for i = 1,10 do
-    add(self.ground,{y=8})
-    cx += 8
+  for i = 1,8 do
+    add(self.ground,{y=i*8}) cx+=8
   end
 
-  add(self.shops,{
-    x=cx-16,
-    y=8,
-  })
+  for i = 1,8 do
+    add(self.ground,{y=8*8}) cx+=8
+  end
+
+  self.goal = {
+    x = cx-32,
+    y = 64-8,
+  }
 
   add(self.ground,{y=128}) cx+=8
   add(self.ground,{y=128}) cx+=8
@@ -94,7 +118,7 @@ function states.game:init()
       speed = 32,
       jumpv = 0,
       dt = 0,
-      money = 11,
+      money = 0,
       potion = 0,
     })
   end
@@ -152,12 +176,23 @@ function states.game:drawBookshelf(bookshelf)
 
 end
 
+function states.game:drawPlax(offset)
+  local off = flr(offset%16)
+  for _x = 0,9 do
+    for _y = 0,8 do
+      spr(157,_x*16-off,_y*16,2,2)
+    end
+  end
+end
+
 function states.game:draw()
   cls()
 
   local off_player = self.players[1]
   local target_offset = off_player.x + (off_player.dir == 1 and -32 or -96)
   offset = offset or target_offset
+
+  self:drawPlax(offset)
 
   for i = 1,8 do
     if flr(offset) ~= flr(target_offset) then
@@ -169,7 +204,10 @@ function states.game:draw()
     end
   end
 
-  for i,v in pairs(self.ground) do
+  local dx = flr(offset/8)
+  for i = max(1,dx),min(dx+17,#self.ground) do
+    local v = self.ground[i]
+
     local x = (i-1)*8
     local y = 128-v.y
     local first = true
@@ -231,6 +269,9 @@ function states.game:draw()
     end
   end
 
+  -- draw goal
+  spr(208,self.goal.x-8-offset,128-self.goal.y-32,2,3)
+
   for _,s in pairs(self.shops) do
     local x,y = s.x-8-offset,128-s.y-32
     local player = self.players[1]
@@ -260,7 +301,9 @@ function states.game:draw()
     local x,y = player.x-8-offset,128-player.y-24
     local sprite = player.dt%0.25 > 0.125 and 14 or 12
     if player.show_item then
-      spr(134,x,y-8,1,1)
+      if player.potion > 0 then
+        spr(134,x,y-8,1,1)
+      end
       sprite = 0
     end
     if player.show_grapple then
@@ -272,6 +315,9 @@ function states.game:draw()
         line(player.x-offset,128-player.y-24,
           cg.x-offset,16)
       end
+    end
+    if player.item_dt then
+      sprite = 8-2*(flr(player.item_dt*3))
     end
     spr(sprite,x,y,2,3,player.dir == -1)
 
@@ -374,9 +420,29 @@ function states.game:update(dt)
 
   for i,player in pairs(self.players) do
 
+    if player.show_item and btn(5,player_index) and player.item_dt == nil and player.potion > 0 then
+      player.item_dt = 1
+    end
+
+    if player.item_dt then
+      player.item_dt -= dt
+      if player.item_dt <= 0 then
+        player.item_dt = nil
+        player.potion -= 1
+        states.start.lives += 1
+      end
+    end
+
+    local gd = self.distance(player,self.goal)
+    if self.distance(player,self.goal) < 16 then
+      switch_state("win")
+      sfx(7,3)
+    end
+
     for _,coin in pairs(self.coins) do
       if self.distance(coin,player) < 4 then
         del(self.coins,coin)
+        sfx(3,3)
         player.money += 1
       end
     end
@@ -384,8 +450,8 @@ function states.game:update(dt)
     for _,enemy in pairs(self.enemies) do
       local distance = self.distance(enemy,player) 
       if distance < 8 then
+        sfx(6,3)
         if states.start.lives > 0 then
-          printh"you be hurt bro"
           states.start.lives -= 1
           switch_state("game")
         else
@@ -449,6 +515,7 @@ function states.game:update(dt)
 
       if player.jumpv == 0 and btn(4,player_index) then
         player.jumpv = 70
+        sfx(5,3)
       end
 
       if btn(1,player_index) then
@@ -487,6 +554,7 @@ function states.game:update(dt)
     if player.grapple == nil then
       if player.show_grapple and btn(5,player_index) then
         player.grapple = self:findNearestGrapple(player)
+        sfx(10,3)
       end
     end
 

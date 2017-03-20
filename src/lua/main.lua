@@ -1,5 +1,6 @@
 function _init()
   switch_state("start")
+  music(0)
 end
 
 function _draw()
