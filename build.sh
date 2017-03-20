@@ -1,5 +1,5 @@
 #!/bin/sh
-PROJECT_SHORTNAME=SneakyGame
+PROJECT_SHORTNAME=StealthElf
 TARGET=src
 GIT=`git log --pretty=format:'%h' -n 1 $TARGET`
 GIT_COUNT=`git log --pretty=format:'' $TARGET | wc -l`
