@@ -29,8 +29,8 @@ function states.game:init()
 
   for level = 1,10 do
 
-    for i = 1,10 do -- platforms in each level
-      local plat_size = flr(rnd()*8)+12
+    for i = 1,5 do -- platforms in each level
+      local plat_size = flr(rnd()*8)+13-level
       local plat_height = flr(rnd()*8)*8+8
 
       add(self.bookshelves,{
@@ -59,18 +59,25 @@ function states.game:init()
         y = plat_height+32,
       })
 
-      add(self.coins,{
-        x = cx - rnd()*plat_size*8/2,
-        y = plat_height,
-      })
+      for i = 1,2 do
+        add(self.coins,{
+          x = cx - rnd()*plat_size*8/2,
+          y = plat_height,
+        })
+      end
     end
     add(self.ground,{y=16}) cx+=8
     add(self.ground,{y=16}) cx+=8
 
     for i = 1,10 do
-      add(self.ground,{y=8})
+      add(self.ground,{y=8,grass=true})
       cx += 8
     end
+
+    add(self.grapples,{
+      x = cx - 32,
+      y = 32,
+    })
 
     add(self.shops,{
       x=cx-32,
@@ -111,9 +118,12 @@ function states.game:init()
 
   self.players = {}
   for _ = 1,1 do
+    local x,y = 3*8,8
+    if states.start.checkpoint then
+      x,y = states.start.checkpoint.x,states.start.checkpoint.y
+    end
     add(self.players,{
-      x = 3*8,
-      y = 8,
+      x=x,y=y,
       dir = 1,
       speed = 32,
       jumpv = 0,
@@ -246,7 +256,11 @@ function states.game:draw()
       end
       first = false
       if tile then
-        spr(tile,x-offset,ny)
+        if v.grass then
+          spr(193,x-offset,ny)
+        else
+          spr(tile,x-offset,ny)
+        end
       end
     end
   end
@@ -335,8 +349,15 @@ function states.game:draw()
     end
   end
 
-  print("lives: "..states.start.lives..
-    " money:"..self.players[1].money.." potion: "..self.players[1].potion)
+  local p = function()
+    print("\135"..states.start.lives..
+      " \134"..self.players[1].money..
+      " \146"..self.players[1].potion)
+  end
+
+  cursor(5,5) color(0) p()
+  cursor(4,4) color(10) p()
+  color(7)
 
 end
 
@@ -388,6 +409,7 @@ function states.game:update(dt)
     for _,player in pairs(self.players) do
       local distance = self.distance(shop,player) 
       if distance < 8 then
+        states.start.checkpoint = {x=shop.x,y=shop.y}
         if btn(5,player_index) and player.shop_attempt_dt == nil then
           player.shop_attempt_dt = 1
           if player.money >= 4 then
