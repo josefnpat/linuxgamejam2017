@@ -19,19 +19,20 @@ function states.start:draw()
   spr(0,9*8,5*8,2,3)
   spr(212,12*8,5*8,3,3)
   cursor(4,4)
-  print("game by @josefnpat")
-  print("art by @therickywill")
+  print("game (mit) by @josefnpat")
+  print("art (cc-by 3.0) by @therickywill")
   print("#linuxgamejam2017")
 
   cursor(4,10*8+4)
-  print("\142 - jump")
+  print("z|\142 - jump")
   print("\139/\145 - left/right")
-  print("\148+\151 - use grapple")
-  print("\131+\151 - use potion")
+  print("\148+x|\151 - use grapple")
+  print("\131+x|\151 - use potion")
 end
 
 function states.start:update(dt)
   if btn(4) or btn(5) then
+    states.game:reset()
     switch_state("game")
   end
 end

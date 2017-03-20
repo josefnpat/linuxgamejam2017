@@ -8,6 +8,27 @@ end
 
 function states.game:init()
 
+  self.players = {}
+  for _ = 1,1 do
+    local x,y = 3*8,8
+    if states.start.checkpoint then
+      x,y = states.start.checkpoint.x,states.start.checkpoint.y
+    end
+    add(self.players,{
+      x=x,y=y,
+      dir = 1,
+      speed = 32,
+      jumpv = 0,
+      dt = 0,
+      money = 0,
+      potion = 0,
+    })
+  end
+
+end
+
+function states.game:reset()
+
   self.dt = 0
 
   self.ground = {}
@@ -115,23 +136,6 @@ function states.game:init()
   self.bottom_right = 100
   self.bottom_left = 102
   self.center = 85
-
-  self.players = {}
-  for _ = 1,1 do
-    local x,y = 3*8,8
-    if states.start.checkpoint then
-      x,y = states.start.checkpoint.x,states.start.checkpoint.y
-    end
-    add(self.players,{
-      x=x,y=y,
-      dir = 1,
-      speed = 32,
-      jumpv = 0,
-      dt = 0,
-      money = 0,
-      potion = 0,
-    })
-  end
 
   self.bs = {
     top = 49,
