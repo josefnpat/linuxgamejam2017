@@ -1,11 +1,5 @@
 states.game = {}
 
-_sfx = sfx
-sfx = function(id,c)
-  _sfx(id,c)
-  printh('sfx:'..id..":"..c)
-end
-
 function states.game:init()
 
   self.players = {}
