@@ -74,12 +74,10 @@ function states.game:reset()
         y = plat_height+32,
       })
 
-      for i = 1,2 do
-        add(self.coins,{
-          x = cx - rnd()*plat_size*8/2,
-          y = plat_height,
-        })
-      end
+      add(self.coins,{
+        x = cx - rnd()*plat_size*8/2,
+        y = plat_height,
+      })
     end
     add(self.ground,{y=16}) cx+=8
     add(self.ground,{y=16}) cx+=8
