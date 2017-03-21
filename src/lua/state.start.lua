@@ -18,9 +18,9 @@ function states.start:draw()
   end
   spr(0,9*8,5*8,2,3)
   spr(212,12*8,5*8,3,3)
-  cursor(4,4)
+  cursor(0,4)
   print("game (mit) by @josefnpat")
-  print("art (cc-by 3.0) by @therickywill")
+  print("art (cc-by3.0) by @therickywill")
   print("#linuxgamejam2017")
 
   cursor(4,10*8+4)
